@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama 大模型演示</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .chat-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            margin-left: auto;
+            margin-right: 0;
+        }
+        .bot-message {
+            background-color: #f0f0f0;
+        }
+        .input-container {
+            display: flex;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .model-selector {
+            margin-bottom: 15px;
+        }
+        .typing-indicator {
+            display: none;
+            margin-bottom: 10px;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #888;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ollama 大模型演示</h1>
+        
+        <div class="model-selector">
+            <label for="model-select">选择模型：</label>
+            <select id="model-select">
+                <option value="deepseek-r1:8b" selected>deepseek-r1:8b</option>
+                <option value="llama2">llama2</option>
+                <option value="qwen:7b">qwen:7b</option>
+                <!-- 可以根据您的Ollama安装的模型添加更多选项 -->
+            </select>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    您好！我是AI助手，请问有什么我可以帮助您的？
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="请输入您的问题..." autofocus>
+                <button id="send-button">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 获取当前页面的基础路径（上下文路径）
+        const getBasePath = () => {
+            // 获取当前URL路径
+            const path = window.location.pathname;
+            // 找到最后一个斜杠的位置，通常静态资源在/static或/public目录下
+            const lastSlashIndex = path.lastIndexOf('/');
+            if (lastSlashIndex <= 0) {
+                return ''; // 如果在根目录，返回空字符串
+            }
+            // 找到倒数第二个斜杠的位置
+            const secondLastSlashIndex = path.lastIndexOf('/', lastSlashIndex - 1);
+            if (secondLastSlashIndex < 0) {
+                return ''; // 如果没有上下文路径，返回空字符串
+            }
+            // 返回上下文路径
+            return path.substring(0, secondLastSlashIndex);
+        };
+        
+        // 计算API的基础URL
+        const apiBasePath = getBasePath();
+        
+        // DOM元素
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const modelSelect = document.getElementById('model-select');
+        const typingIndicator = document.getElementById('typing-indicator');
+        
+        // 发送消息
+        function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            
+            // 添加用户消息到聊天窗口
+            addMessage(text, 'user');
+            
+            // 清空输入框
+            userInput.value = '';
+            
+            // 显示打字指示器
+            typingIndicator.style.display = 'block';
+            
+            // 获取选中的模型
+            const model = modelSelect.value;
+            
+            // 创建一个bot消息容器，准备接收流式响应
+            const botMessageElement = document.createElement('div');
+            botMessageElement.className = 'message bot-message';
+            chatMessages.appendChild(botMessageElement);
+            
+            // 构建完整的URL，确保使用当前窗口的主机和端口
+            const baseUrl = window.location.protocol + '//' + window.location.host;
+            const streamUrl = `${baseUrl}/api/ollama/stream?text=${encodeURIComponent(text)}&model=${encodeURIComponent(model)}`;
+            
+            console.log("发送请求到:", streamUrl);
+            
+            // 使用SSE接收流式响应
+            const eventSource = new EventSource(streamUrl);
+            
+            // 接收字符事件
+            eventSource.addEventListener('character', function(e) {
+                // 添加字符到bot消息
+                botMessageElement.textContent += e.data;
+                
+                // 自动滚动到底部
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+            
+            // 接收完成事件
+            eventSource.addEventListener('done', function(e) {
+                // 隐藏打字指示器
+                typingIndicator.style.display = 'none';
+                
+                // 关闭SSE连接
+                eventSource.close();
+                
+                // 自动滚动到底部
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+            
+            // 错误处理
+            eventSource.onerror = function(e) {
+                console.error('SSE错误:', e);
+                typingIndicator.style.display = 'none';
+                botMessageElement.textContent += '\n[出现错误，连接已断开]';
+                eventSource.close();
+            };
+        }
+        
+        // 添加消息到聊天窗口
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}-message`;
+            messageElement.textContent = text;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 绑定事件
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 

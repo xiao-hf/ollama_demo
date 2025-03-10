@@ -3,121 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama 大模型演示</title>
+    <title>喵喵猫娘 - 可爱的AI猫娘助手</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
     <style>
+        :root {
+            --primary-color: #ff78a0;
+            --secondary-color: #ffb7d1;
+            --accent-color: #af7dff;
+            --bg-color: #fff6f8;
+            --text-color: #6e4a5f;
+            --bubble-user: #e0f1ff;
+            --bubble-bot: #ffe6f0;
+        }
+        
         body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-family: 'Noto Sans SC', sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffcce6' fill-opacity='0.3' fill-rule='evenodd'/%3E%3C/svg%3E");
         }
+        
         .container {
             background-color: white;
-            border-radius: 10px;
+            border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(255, 120, 160, 0.2);
         }
+        
         h1 {
-            color: #333;
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: var(--accent-color);
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+        
+        .cat-ears {
+            position: relative;
+            display: inline-block;
+            width: 300px;
+            margin: 0 auto;
             text-align: center;
         }
-        .chat-container {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
+        
+        .cat-ears:before, .cat-ears:after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            width: 30px;
+            height: 30px;
+            background: var(--primary-color);
+            border-radius: 50% 50% 0 0;
         }
-        .chat-messages {
-            height: 300px;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #f9f9f9;
+        
+        .cat-ears:before {
+            left: 80px;
+            transform: rotate(-30deg);
         }
-        .message {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 80%;
+        
+        .cat-ears:after {
+            right: 80px;
+            transform: rotate(30deg);
         }
-        .user-message {
-            background-color: #dcf8c6;
-            margin-left: auto;
-            margin-right: 0;
-        }
-        .bot-message {
-            background-color: #f0f0f0;
-        }
-        .input-container {
-            display: flex;
-            border-top: 1px solid #ddd;
-            padding: 10px;
-        }
-        #user-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #0078ff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
+        
         .model-selector {
             margin-bottom: 15px;
+            text-align: center;
         }
+        
+        .model-selector select {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid var(--secondary-color);
+            background-color: white;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .model-selector select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 120, 160, 0.3);
+        }
+        
+        .chat-container {
+            margin-top: 20px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: white;
+        }
+        
+        .chat-messages {
+            height: 380px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: white;
+            background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffb7d1' fill-opacity='0.1'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 85%;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background-color: var(--bubble-user);
+            margin-left: auto;
+            margin-right: 0;
+            border-bottom-right-radius: 5px;
+            color: #2e5e8a;
+        }
+        
+        .user-message:after {
+            content: "";
+            position: absolute;
+            right: -10px;
+            bottom: 0;
+            width: 20px;
+            height: 20px;
+            background-color: var(--bubble-user);
+            border-bottom-left-radius: 15px;
+            z-index: -1;
+        }
+        
+        .bot-message {
+            background-color: var(--bubble-bot);
+            border-bottom-left-radius: 5px;
+            color: #8a2e5e;
+        }
+        
+        .bot-message:after {
+            content: "";
+            position: absolute;
+            left: -10px;
+            bottom: 0;
+            width: 20px;
+            height: 20px;
+            background-color: var(--bubble-bot);
+            border-bottom-right-radius: 15px;
+            z-index: -1;
+        }
+        
+        .input-container {
+            display: flex;
+            border-top: 2px solid var(--secondary-color);
+            padding: 12px;
+            background-color: white;
+        }
+        
+        #user-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+        
+        #user-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 120, 160, 0.3);
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(255, 120, 160, 0.4);
+        }
+        
+        button:hover {
+            background-color: #ff5589;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 120, 160, 0.5);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(255, 120, 160, 0.4);
+        }
+        
         .typing-indicator {
             display: none;
             margin-bottom: 10px;
+            text-align: left;
         }
+        
         .typing-indicator span {
             display: inline-block;
             width: 8px;
             height: 8px;
-            background-color: #888;
+            background-color: var(--primary-color);
             border-radius: 50%;
             margin-right: 5px;
             animation: typing 1s infinite ease-in-out;
         }
+        
         .typing-indicator span:nth-child(2) {
             animation-delay: 0.2s;
         }
+        
         .typing-indicator span:nth-child(3) {
             animation-delay: 0.4s;
         }
+        
         @keyframes typing {
             0% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
             100% { transform: translateY(0); }
         }
+        
+        .cat-emoji {
+            font-size: 20px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .kawaii-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Ollama 大模型演示</h1>
+        <div class="cat-ears">
+            <h1>喵喵猫娘</h1>
+        </div>
+        <div class="subtitle">🐾 有什么喵～可以帮到主人的吗？</div>
         
         <div class="model-selector">
-            <label for="model-select">选择模型：</label>
             <select id="model-select">
-                <option value="deepseek-r1:8b" selected>deepseek-r1:8b</option>
-                <option value="llama2">llama2</option>
-                <option value="qwen:7b">qwen:7b</option>
-                <!-- 可以根据您的Ollama安装的模型添加更多选项 -->
+                <option value="deepseek-r1:8b" selected>猫娘模式 (deepseek-r1:8b)</option>
+                <option value="llama2">可爱模式 (llama2)</option>
+                <option value="qwen:7b">温柔模式 (qwen:7b)</option>
             </select>
         </div>
         
         <div class="chat-container">
             <div class="chat-messages" id="chat-messages">
                 <div class="message bot-message">
-                    您好！我是AI助手，请问有什么我可以帮助您的？
+                    喵～主人好喵！✧*｡٩(ˊᗜˋ*)و✧*｡ 人家是喵喵猫娘，最喜欢主人了喵～有什么需要帮忙的吗？人家会尽力帮主人解决问题的喵～也可以陪主人聊天解闷哦～
                 </div>
             </div>
             
@@ -128,9 +286,13 @@
             </div>
             
             <div class="input-container">
-                <input type="text" id="user-input" placeholder="请输入您的问题..." autofocus>
-                <button id="send-button">发送</button>
+                <input type="text" id="user-input" placeholder="和猫娘聊天喵～" autofocus>
+                <button id="send-button">发送 🐾</button>
             </div>
+        </div>
+        
+        <div class="kawaii-footer">
+            🌸 喵喵猫娘随时在线为主人服务喵～ 🌸
         </div>
     </div>
     
@@ -163,6 +325,14 @@
         const modelSelect = document.getElementById('model-select');
         const typingIndicator = document.getElementById('typing-indicator');
         
+        // 猫娘表情列表
+        const catEmojis = ['😺', '😸', '😻', '🐱', '🐾', '✧*｡', '(=^･ω･^=)', '(๑•̀ㅂ•́)و✧', '(ฅ´ω`ฅ)', '(◕ᴗ◕✿)'];
+        
+        // 随机获取猫娘表情
+        function getRandomCatEmoji() {
+            return catEmojis[Math.floor(Math.random() * catEmojis.length)];
+        }
+        
         // 发送消息
         function sendMessage() {
             const text = userInput.value.trim();
@@ -185,43 +355,96 @@
             botMessageElement.className = 'message bot-message';
             chatMessages.appendChild(botMessageElement);
             
+            // 向猫娘的初始化内容添加一个猫娘表情
+            botMessageElement.textContent = getRandomCatEmoji() + " ";
+            
             // 构建完整的URL，确保使用当前窗口的主机和端口
             const baseUrl = window.location.protocol + '//' + window.location.host;
-            const streamUrl = `${baseUrl}/api/ollama/stream?text=${encodeURIComponent(text)}&model=${encodeURIComponent(model)}`;
+            const streamUrl = `${baseUrl}/api/ollama/stream`;
             
-            console.log("发送请求到:", streamUrl);
+            // 添加猫娘角色设定到用户输入中
+            const catgirlPrompt = `你是一个名为"喵喵"的猫娘，说话时喜欢在句尾加"喵"，性格可爱活泼，喜欢撒娇，用"人家"代替"我"，会使用颜文字表达情感。现在请以猫娘的语气回答用户的问题：${text}`;
             
-            // 使用SSE接收流式响应
-            const eventSource = new EventSource(streamUrl);
-            
-            // 接收字符事件
-            eventSource.addEventListener('character', function(e) {
-                // 添加字符到bot消息
-                botMessageElement.textContent += e.data;
-                
-                // 自动滚动到底部
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-            
-            // 接收完成事件
-            eventSource.addEventListener('done', function(e) {
-                // 隐藏打字指示器
-                typingIndicator.style.display = 'none';
-                
-                // 关闭SSE连接
-                eventSource.close();
-                
-                // 自动滚动到底部
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-            
-            // 错误处理
-            eventSource.onerror = function(e) {
-                console.error('SSE错误:', e);
-                typingIndicator.style.display = 'none';
-                botMessageElement.textContent += '\n[出现错误，连接已断开]';
-                eventSource.close();
+            // 构建请求数据
+            const requestData = { 
+                text: catgirlPrompt,
+                model: model 
             };
+            
+            console.log("发送猫娘询问:", streamUrl);
+            
+            // 使用fetch API实现POST方式的SSE（服务器发送事件）
+            fetch(streamUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream'
+                },
+                body: JSON.stringify(requestData)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态: ${response.status}`);
+                }
+                
+                // 获取响应的reader
+                const reader = response.body.getReader();
+                let decoder = new TextDecoder();
+                let buffer = '';
+                
+                // 递归函数来处理流数据
+                function readStream() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            console.log('流读取完成');
+                            // 隐藏打字指示器
+                            typingIndicator.style.display = 'none';
+                            return;
+                        }
+                        
+                        // 解码收到的数据并添加到缓冲区
+                        buffer += decoder.decode(value, { stream: true });
+                        
+                        // 按行处理SSE数据
+                        let lines = buffer.split('\n\n');
+                        buffer = lines.pop() || ''; // 最后一行可能不完整，保留到下次处理
+                        
+                        for (const line of lines) {
+                            if (line.trim() === '') continue;
+                            
+                            // 解析SSE格式
+                            let eventData = {};
+                            line.split('\n').forEach(l => {
+                                if (l.startsWith('event:')) {
+                                    eventData.event = l.substring(6).trim();
+                                } else if (l.startsWith('data:')) {
+                                    eventData.data = l.substring(5).trim();
+                                }
+                            });
+                            
+                            // 处理不同类型的事件
+                            if (eventData.event === 'character' && eventData.data) {
+                                // 处理字符事件
+                                botMessageElement.textContent += eventData.data;
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            } else if (eventData.event === 'done') {
+                                // 处理完成事件
+                                console.log('接收到完成事件');
+                                typingIndicator.style.display = 'none';
+                            }
+                        }
+                        
+                        // 继续读取流
+                        return readStream();
+                    });
+                }
+                
+                // 开始读取流
+                return readStream();
+            }).catch(error => {
+                console.error('流式请求错误:', error);
+                typingIndicator.style.display = 'none';
+                botMessageElement.textContent += '\n[喵呜~出错了喵，人家好难过(´；ω；`)]';
+            });
         }
         
         // 添加消息到聊天窗口

@@ -1,6 +1,7 @@
 package com.xiao.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.xiao.dto.ChatRequestDTO;
 import com.xiao.dto.OllamaRequestDTO;
 import com.xiao.dto.OllamaResponseDTO;
 import com.xiao.utils.HttpUtil;
@@ -34,26 +35,23 @@ public class OllamaController {
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     
     /**
-     * 普通请求大模型API
+     * 普通请求大模型API (POST方式)
      * 
-     * @param text 用户输入的文本
-     * @param model 模型名称，默认为deepseek-r1:8b
+     * @param request 聊天请求DTO，包含text和model参数
      * @return 大模型的回复
      */
-    @GetMapping("/ask")
-    public Map<String, Object> ask(
-            @RequestParam String text,
-            @RequestParam(required = false, defaultValue = "deepseek-r1:8b") String model) {
-        
-        log.info("收到普通请求，模型: {}, 内容: {}", model, text);
+    @PostMapping("/ask")
+    public Map<String, Object> ask(@RequestBody ChatRequestDTO request) {
+
+        log.info("收到普通请求，模型: {}, 内容: {}", request.getModel(), request.getText());
         
         // Ollama API地址
         String url = "http://localhost:11434/api/generate";
         
         // 构建请求DTO
-        OllamaRequestDTO request = OllamaRequestDTO.builder()
-                .model(model)
-                .prompt(text)
+        OllamaRequestDTO ollamaRequest = OllamaRequestDTO.builder()
+                .model(request.getModel())
+                .prompt(request.getText())
                 .stream(false)
                 .build();
         
@@ -62,7 +60,7 @@ public class OllamaController {
         headers.put("Content-Type", "application/json");
         
         // 发送POST请求
-        String responseJson = httpUtil.doPost(url, headers, JSON.toJSONString(request));
+        String responseJson = httpUtil.doPost(url, headers, JSON.toJSONString(ollamaRequest));
         
         // 解析响应
         OllamaResponseDTO response = JSON.parseObject(responseJson, OllamaResponseDTO.class);
@@ -79,19 +77,16 @@ public class OllamaController {
     }
     
     /**
-     * 流式请求大模型API
+     * 流式请求大模型API (POST方式)
      * 使用SSE实现实时流式响应
      * 
-     * @param text 用户输入的文本
-     * @param model 模型名称，默认为deepseek-r1:8b
+     * @param request 聊天请求DTO，包含text和model参数
      * @return SSE事件流
      */
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamAsk(
-            @RequestParam String text,
-            @RequestParam(required = false, defaultValue = "deepseek-r1:8b") String model) {
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamAsk(@RequestBody ChatRequestDTO request) {
         
-        log.info("收到流式请求，模型: {}, 内容: {}", model, text);
+        log.info("收到流式请求，模型: {}, 内容: {}", request.getModel(), request.getText());
         
         // 创建SSE发射器，设置超时时间为5分钟
         SseEmitter emitter = new SseEmitter(300000L);
@@ -105,8 +100,8 @@ public class OllamaController {
         
         // 使用字符级别流式响应
         ollamaStreamUtil.streamRequestCharByChar(
-                model,
-                text,
+                request.getModel(),
+                request.getText(),
                 // 处理每个字符
                 character -> {
                     try {
@@ -141,5 +136,17 @@ public class OllamaController {
         );
         
         return emitter;
+    }
+    
+    /**
+     * 为了兼容现有前端，保留GET方式的流式请求API
+     */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamAskGet(
+            @RequestParam String text,
+            @RequestParam(required = false, defaultValue = "deepseek-r1:8b") String model) {
+        
+        ChatRequestDTO request = new ChatRequestDTO(text, model);
+        return streamAsk(request);
     }
 } 

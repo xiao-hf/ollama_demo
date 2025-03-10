@@ -68,6 +68,40 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
+
+		<!-- Spring AI 依赖 -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-bom</artifactId>
+			<version>0.8.0</version>
+			<type>pom</type>
+			<scope>import</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-core</artifactId>
+			<version>0.8.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-ollama</artifactId>
+			<version>0.8.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-ollama</artifactId>
+			<version>0.8.0</version>
+		</dependency>
+		
+		<!-- 其他可选的Spring AI模块 -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-transformer</artifactId>
+			<version>0.8.0</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

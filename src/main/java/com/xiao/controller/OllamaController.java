@@ -37,13 +37,16 @@ public class OllamaController {
     /**
      * 普通请求大模型API (POST方式)
      * 
-     * @param request 聊天请求DTO，包含text和model参数
+     * @param request 聊天请求DTO，包含text、model和context参数
      * @return 大模型的回复
      */
     @PostMapping("/ask")
     public Map<String, Object> ask(@RequestBody ChatRequestDTO request) {
 
-        log.info("收到普通请求，模型: {}, 内容: {}", request.getModel(), request.getText());
+        log.info("收到普通请求，模型: {}, 内容: {}, 上下文大小: {}", 
+                request.getModel(), 
+                request.getText(), 
+                request.getContext() != null ? request.getContext().size() : 0);
         
         // Ollama API地址
         String url = "http://localhost:11434/api/generate";
@@ -52,6 +55,7 @@ public class OllamaController {
         OllamaRequestDTO ollamaRequest = OllamaRequestDTO.builder()
                 .model(request.getModel())
                 .prompt(request.getText())
+                .context(request.getContext())  // 传递上下文
                 .stream(false)
                 .build();
         
@@ -72,6 +76,7 @@ public class OllamaController {
         result.put("response", response.getResponse());
         result.put("done", response.getDone());
         result.put("total_duration", response.getTotal_duration());
+        result.put("context", response.getContext());  // 返回上下文给前端
         
         return result;
     }
@@ -80,13 +85,16 @@ public class OllamaController {
      * 流式请求大模型API (POST方式)
      * 使用SSE实现实时流式响应
      * 
-     * @param request 聊天请求DTO，包含text和model参数
+     * @param request 聊天请求DTO，包含text、model和context参数
      * @return SSE事件流
      */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamAsk(@RequestBody ChatRequestDTO request) {
         
-        log.info("收到流式请求，模型: {}, 内容: {}", request.getModel(), request.getText());
+        log.info("收到流式请求，模型: {}, 内容: {}, 上下文大小: {}", 
+                request.getModel(), 
+                request.getText(), 
+                request.getContext() != null ? request.getContext().size() : 0);
         
         // 创建SSE发射器，设置超时时间为5分钟
         SseEmitter emitter = new SseEmitter(300000L);
@@ -102,6 +110,7 @@ public class OllamaController {
         ollamaStreamUtil.streamRequestCharByChar(
                 request.getModel(),
                 request.getText(),
+                request.getContext(),  // 传递上下文
                 // 处理每个字符
                 character -> {
                     try {
@@ -114,9 +123,16 @@ public class OllamaController {
                         emitter.completeWithError(e);
                     }
                 },
-                // 完成回调
-                () -> {
+                // 完成回调，发送上下文
+                (context) -> {
                     try {
+                        // 发送上下文事件
+                        if (context != null) {
+                            emitter.send(SseEmitter.event()
+                                    .name("context")
+                                    .data(JSON.toJSONString(context)));
+                        }
+                        
                         // 发送完成事件
                         emitter.send(SseEmitter.event()
                                 .name("done")

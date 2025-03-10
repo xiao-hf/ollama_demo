@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
+import java.util.List;
 
 /**
  * Ollama API请求DTO
@@ -33,6 +32,12 @@ public class OllamaRequestDTO {
      */
     @Builder.Default
     private Boolean stream = false;
+    
+    /**
+     * 上下文信息，用于保持对话连续性
+     * 这是上一次响应中返回的context数组
+     */
+    private List<Integer> context;
     
     /**
      * 模型参数选项
